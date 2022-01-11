@@ -71,18 +71,18 @@ final private[client] class QueryOps(client: Client, tableService: TableOps, job
       Logger.info(s"Creating temporary view ${bq.BigQueryHelpers.toTableSpec(temp)}")
       val view = new ViewDefinition().setQuery(sqlQuery)
       val viewTable = new Table().setView(view).setTableReference(temp)
-      val schema = client.underlying
-        .tables()
-        .insert(temp.getProjectId, temp.getDatasetId, viewTable)
-        .execute()
+      val schema = client
+        .execute(
+          _.tables().insert(temp.getProjectId, temp.getDatasetId, viewTable)
+        )
         .getSchema
 
       // Delete temporary table
       Logger.info(s"Deleting temporary view ${bq.BigQueryHelpers.toTableSpec(temp)}")
-      client.underlying
-        .tables()
-        .delete(temp.getProjectId, temp.getDatasetId, temp.getTableId)
-        .execute()
+      client.execute(
+        _.tables()
+          .delete(temp.getProjectId, temp.getDatasetId, temp.getTableId)
+      )
 
       schema
     } else {
@@ -255,7 +255,7 @@ final private[client] class QueryOps(client: Client, tableService: TableOps, job
       val fullJobId = BigQueryUtil.generateJobId(client.project)
       val jobReference = new JobReference().setProjectId(client.project).setJobId(fullJobId)
       val job = new Job().setConfiguration(jobConfig).setJobReference(jobReference)
-      client.underlying.jobs().insert(client.project, job).execute()
+      client.execute(_.jobs().insert(client.project, job))
     }
     if (config.useLegacySql) {
       Logger.info(s"Executing legacy query ($Priority): `${config.sql}`")
@@ -338,7 +338,7 @@ final private[client] class QueryOps(client: Client, tableService: TableOps, job
         val locations = extractTables(job).get
           .map(t => (t.getProjectId, t.getDatasetId))
           .map { case (pId, dId) =>
-            val l = client.underlying.datasets().get(pId, dId).execute().getLocation
+            val l = client.execute(_.datasets().get(pId, dId)).getLocation
             if (l != null) l else BigQueryConfig.location
           }
         require(locations.size <= 1, "Tables in the query must be in the same location")

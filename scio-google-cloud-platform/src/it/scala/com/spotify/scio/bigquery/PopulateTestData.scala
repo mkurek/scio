@@ -154,7 +154,7 @@ object BigQueryTestData {
       .setDatasetReference(new DatasetReference().setProjectId(projectId).setDatasetId(datasetId))
       .setLocation(location)
     try {
-      bq.client.underlying.datasets().insert(projectId, ds).execute()
+      bq.client.execute(_.datasets().insert(projectId, ds))
     } catch {
       case NonFatal(e) => e.printStackTrace()
     }
