@@ -242,7 +242,10 @@ object BigQuery {
       Try(fn(underlying).execute()) match {
         case Success(response) => response
         case Failure(e: HttpResponseException) if e.getStatusCode == 403 =>
-          throw new RuntimeException(s"Authenticated user $getAuthenticatedUser did not have permissions to execute BigQuery request", e)
+          throw new RuntimeException(
+            s"Authenticated user $getAuthenticatedUser did not have permissions to execute BigQuery request",
+            e
+          )
         case Failure(e) =>
           throw e
       }
