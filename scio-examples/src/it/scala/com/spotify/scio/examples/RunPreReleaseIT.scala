@@ -46,9 +46,7 @@ object RunPreReleaseIT {
 
     Await.result(
       Future
-        .sequence(
-          parquet(runId) ++ avro(runId) ++ smb(runId)
-        )
+        .sequence(bigquery(runId))
         .map(_ => log.info("All Dataflow jobs ran successfully."))
         .recover(e => throw new RuntimeException("At least one Dataflow job failed", e)),
       Duration(1, TimeUnit.HOURS)
@@ -135,6 +133,16 @@ object RunPreReleaseIT {
         )
       )
     )
+  }
+
+  private def bigquery(runId: String): List[Future[Unit]] = {
+    import com.spotify.scio.examples.extra.TypedStorageBigQueryTornadoes
+
+    List(Future
+      .successful(log.info("Starting BigQuery tests... "))
+      .flatMap(_ =>
+        invokeJob[TypedStorageBigQueryTornadoes.type](s"--output=data-integration-test:gha_it.storage_$runId")
+      ))
   }
 
   private def invokeJob[T: ClassTag](args: String*): Future[Unit] =
